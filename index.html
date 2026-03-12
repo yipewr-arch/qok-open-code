@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Qok Snapshot-118 (HTML Prototype)</title>
+  <style>
+    :root {
+      --bg: #0f1222;
+      --panel: #1a2040;
+      --panel-2: #242c54;
+      --accent: #7f5cff;
+      --accent-2: #c24dff;
+      --ok: #5de38a;
+      --text: #eef1ff;
+      --muted: #b9c1ea;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 20%, #1d1b33, transparent 40%),
+        radial-gradient(circle at 80% 15%, #2c1449, transparent 30%),
+        linear-gradient(180deg, #090b16 0%, var(--bg) 60%, #0b1028 100%);
+      min-height: 100vh;
+    }
+
+    .app {
+      width: min(1200px, 96vw);
+      margin: 20px auto;
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 320px 1fr;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border: 1px solid #47509a;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      padding: 14px;
+    }
+
+    h1, h2, h3 { margin: 0 0 10px; }
+    h1 { font-size: 1.2rem; }
+    h2 { font-size: 1rem; color: var(--muted); font-weight: 600; }
+
+    .menu-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    button, .chip {
+      border: 1px solid #5f6cb7;
+      background: #2c3870;
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button:hover { filter: brightness(1.1); }
+    button.active { outline: 2px solid var(--ok); }
+
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { background: #354281; cursor: default; }
+
+    .world {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 10px;
+      min-height: 76vh;
+    }
+
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid #4c57a2;
+      border-radius: 10px;
+      padding: 8px;
+    }
+
+    #worldCanvas {
+      width: 100%;
+      height: 100%;
+      min-height: 460px;
+      border-radius: 14px;
+      border: 1px solid #5d69ba;
+      background: #130f2b;
+      image-rendering: pixelated;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .control-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .mobile-pad {
+      display: none;
+      position: fixed;
+      bottom: 14px;
+      left: 14px;
+      z-index: 10;
+      gap: 8px;
+      grid-template-columns: 52px 52px 52px;
+      grid-template-rows: 52px 52px 52px;
+    }
+
+    .mobile-pad button { padding: 0; font-size: 1.2rem; }
+
+    .mobile-actions {
+      display: none;
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      z-index: 10;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      width: 120px;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.3;
+    }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .world { min-height: auto; }
+      #worldCanvas { min-height: 340px; }
+    }
+
+    @media (pointer: coarse) {
+      .mobile-pad { display: grid; }
+      .mobile-actions { display: flex; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="panel">
+      <h1>Qok Snapshot-118</h1>
+      <h2>Меню</h2>
+      <div class="menu-buttons">
+        <button id="btnPlay">Играть (создать мир)</button>
+        <button id="btnSettings">Настройки</button>
+        <button id="btnSkins">Выбор скинов</button>
+        <button id="btnBlocks">Блоки / E</button>
+      </div>
+
+      <h2>Режим</h2>
+      <div class="row">
+        <button class="mode active" data-mode="creative">Креатив</button>
+        <button class="mode" data-mode="survival">Выживание</button>
+      </div>
+
+      <h2>Биомы (2)</h2>
+      <div class="chips">
+        <span class="chip">Равнина</span>
+        <span class="chip">Каменный</span>
+      </div>
+
+      <h2 style="margin-top: 12px">Контент</h2>
+      <div class="chips">
+        <span class="chip">Сундук</span>
+        <span class="chip">Верстак</span>
+        <span class="chip">Шахта</span>
+        <span class="chip">Деревня</span>
+        <span class="chip">Портал в ад (вдали)</span>
+        <span class="chip">Конец мира: чёрно-фиолетовый край</span>
+      </div>
+
+      <h2 style="margin-top: 12px">Мобы</h2>
+      <div class="chips">
+        <span class="chip">Зомби</span>
+        <span class="chip">Свинья</span>
+        <span class="chip">Житель</span>
+        <span class="chip">Крипер</span>
+      </div>
+
+      <h2 style="margin-top: 12px">Экипировка</h2>
+      <div class="chips">
+        <span class="chip">Шлем</span>
+        <span class="chip">Одежда</span>
+        <span class="chip">Штаны</span>
+      </div>
+
+      <p class="note" style="margin-top:12px;">
+        Управление: ПК — WASD/стрелки, E открывает меню блоков. Телефон — экранные кнопки.
+        Авто-режим: игрок двигается сам и обходит край мира.
+      </p>
+    </aside>
+
+    <main class="panel world">
+      <div class="hud">
+        <div><strong>Мир:</strong> 728×728</div>
+        <div><strong>Игрок:</strong> <span id="playerInfo">x=364 y=364</span></div>
+        <div><strong>Режим:</strong> <span id="modeInfo">creative</span></div>
+        <div><strong>Управление:</strong> <span id="controlInfo">ПК</span></div>
+      </div>
+
+      <canvas id="worldCanvas" width="728" height="728"></canvas>
+
+      <div class="controls">
+        <div class="control-group">
+          <button id="toggleAuto">Авто: выкл</button>
+          <button id="openBlocks">Открыть блоки</button>
+          <button id="openChest">Открыть сундук</button>
+          <button id="openCraft">Открыть верстак</button>
+        </div>
+        <div id="log" class="note">Готово: мир создан.</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="mobile-pad" aria-label="mobile movement">
+    <button data-move="up" style="grid-column:2;grid-row:1">↑</button>
+    <button data-move="left" style="grid-column:1;grid-row:2">←</button>
+    <button data-move="down" style="grid-column:2;grid-row:3">↓</button>
+    <button data-move="right" style="grid-column:3;grid-row:2">→</button>
+  </div>
+  <div class="mobile-actions">
+    <button id="mobileE">E / Блоки</button>
+    <button id="mobileAuto">Авто</button>
+  </div>
+
+  <script>
+    const worldSize = 728;
+    const canvas = document.getElementById('worldCanvas');
+    const ctx = canvas.getContext('2d');
+    const playerInfo = document.getElementById('playerInfo');
+    const modeInfo = document.getElementById('modeInfo');
+    const controlInfo = document.getElementById('controlInfo');
+    const log = document.getElementById('log');
+
+    const state = {
+      mode: 'creative',
+      auto: false,
+      player: { x: 364, y: 364, skin: 0 },
+      moving: { up: false, down: false, left: false, right: false }
+    };
+
+    const portal = { x: 670, y: 80, w: 26, h: 40 };
+    const mine = { x: 210, y: 130, w: 60, h: 34 };
+    const village = { x: 470, y: 510, w: 90, h: 60 };
+    const mobs = [
+      { type: 'zombie', x: 300, y: 250, color: '#6fd05e' },
+      { type: 'pig', x: 390, y: 430, color: '#ff9fb5' },
+      { type: 'villager', x: 515, y: 540, color: '#d6b58b' },
+      { type: 'creeper', x: 625, y: 330, color: '#4ecf77' }
+    ];
+
+    function setLog(text) {
+      log.textContent = text;
+    }
+
+    function detectControlType() {
+      const mobile = window.matchMedia('(pointer: coarse)').matches;
+      controlInfo.textContent = mobile ? 'Телефон' : 'ПК';
+    }
+
+    function drawWorld() {
+      // Биом 1: трава/земля
+      ctx.fillStyle = '#4f9946';
+      ctx.fillRect(0, 0, worldSize / 2, worldSize);
+
+      // Биом 2: камень
+      ctx.fillStyle = '#7c7f87';
+      ctx.fillRect(worldSize / 2, 0, worldSize / 2, worldSize);
+
+      // Черно-фиолетовый край мира
+      const border = 16;
+      ctx.fillStyle = '#23002f';
+      ctx.fillRect(0, 0, worldSize, border);
+      ctx.fillRect(0, worldSize - border, worldSize, border);
+      ctx.fillRect(0, 0, border, worldSize);
+      ctx.fillRect(worldSize - border, 0, border, worldSize);
+
+      ctx.fillStyle = '#7f2cff';
+      for (let i = 0; i < worldSize; i += 24) {
+        ctx.fillRect(i, 0, 10, border);
+        ctx.fillRect(i, worldSize - border, 10, border);
+      }
+
+      // Шахта
+      ctx.fillStyle = '#2a2a2a';
+      ctx.fillRect(mine.x, mine.y, mine.w, mine.h);
+      ctx.fillStyle = '#a8a8a8';
+      ctx.fillText('Шахта', mine.x + 8, mine.y + 20);
+
+      // Деревня
+      ctx.fillStyle = '#9d7b4f';
+      ctx.fillRect(village.x, village.y, village.w, village.h);
+      ctx.fillStyle = '#f1d6a5';
+      ctx.fillText('Деревня', village.x + 10, village.y + 30);
+
+      // Сундук
+      ctx.fillStyle = '#9c6a2a';
+      ctx.fillRect(280, 370, 22, 18);
+      ctx.fillStyle = '#231609';
+      ctx.fillRect(289, 378, 4, 4);
+
+      // Верстак
+      ctx.fillStyle = '#6f4a2f';
+      ctx.fillRect(333, 340, 24, 24);
+      ctx.fillStyle = '#c9a483';
+      ctx.fillRect(337, 344, 16, 6);
+
+      // Портал в ад
+      const p = portal;
+      const grad = ctx.createLinearGradient(p.x, p.y, p.x + p.w, p.y + p.h);
+      grad.addColorStop(0, '#4c1f6e');
+      grad.addColorStop(1, '#a351ff');
+      ctx.fillStyle = '#1f0f2e';
+      ctx.fillRect(p.x - 3, p.y - 3, p.w + 6, p.h + 6);
+      ctx.fillStyle = grad;
+      ctx.fillRect(p.x, p.y, p.w, p.h);
+
+      // Мобы
+      mobs.forEach((m) => {
+        ctx.fillStyle = m.color;
+        ctx.fillRect(m.x, m.y, 12, 12);
+      });
+    }
+
+    function drawPlayer() {
+      const { x, y, skin } = state.player;
+      const skinColor = ['#50d9ff', '#ffc24b', '#db8fff'][skin];
+
+      // штаны
+      ctx.fillStyle = '#4e75ff';
+      ctx.fillRect(x - 5, y + 5, 10, 7);
+      // одежда
+      ctx.fillStyle = skinColor;
+      ctx.fillRect(x - 6, y - 3, 12, 8);
+      // шлем
+      ctx.fillStyle = '#e6edf8';
+      ctx.fillRect(x - 5, y - 8, 10, 4);
+    }
+
+    function clampPlayer() {
+      state.player.x = Math.max(20, Math.min(worldSize - 20, state.player.x));
+      state.player.y = Math.max(20, Math.min(worldSize - 20, state.player.y));
+    }
+
+    function updatePlayer() {
+      const speed = state.mode === 'creative' ? 2.2 : 1.5;
+      if (state.auto) {
+        state.player.x += speed;
+        state.player.y += Math.sin(Date.now() / 350) * 1.2;
+        if (state.player.x > worldSize - 24) state.player.x = 24;
+      } else {
+        if (state.moving.up) state.player.y -= speed;
+        if (state.moving.down) state.player.y += speed;
+        if (state.moving.left) state.player.x -= speed;
+        if (state.moving.right) state.player.x += speed;
+      }
+      clampPlayer();
+      playerInfo.textContent = `x=${Math.round(state.player.x)} y=${Math.round(state.player.y)}`;
+    }
+
+    function tick() {
+      updatePlayer();
+      drawWorld();
+      drawPlayer();
+      requestAnimationFrame(tick);
+    }
+
+    function setMode(mode) {
+      state.mode = mode;
+      modeInfo.textContent = mode;
+      document.querySelectorAll('.mode').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+      setLog(`Режим: ${mode}`);
+    }
+
+    document.querySelectorAll('.mode').forEach((btn) => {
+      btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    });
+
+    document.getElementById('btnPlay').addEventListener('click', () => setLog('Мир 728×728 создан.'));
+    document.getElementById('btnSettings').addEventListener('click', () => setLog('Открыты настройки (прототип).'));
+    document.getElementById('btnSkins').addEventListener('click', () => {
+      state.player.skin = (state.player.skin + 1) % 3;
+      setLog(`Скин выбран: #${state.player.skin + 1}`);
+    });
+
+    function openBlocks() { setLog('Меню блоков открыто (Сундук, Верстак, Земля, Трава, Камень).'); }
+    document.getElementById('btnBlocks').addEventListener('click', openBlocks);
+    document.getElementById('openBlocks').addEventListener('click', openBlocks);
+    document.getElementById('mobileE').addEventListener('click', openBlocks);
+
+    document.getElementById('openChest').addEventListener('click', () => setLog('Сундук открыт.'));
+    document.getElementById('openCraft').addEventListener('click', () => setLog('Верстак открыт.'));
+
+    function toggleAuto() {
+      state.auto = !state.auto;
+      document.getElementById('toggleAuto').textContent = `Авто: ${state.auto ? 'вкл' : 'выкл'}`;
+      document.getElementById('mobileAuto').textContent = `Авто: ${state.auto ? 'вкл' : 'выкл'}`;
+      setLog(`Авто-управление: ${state.auto ? 'включено' : 'выключено'}`);
+    }
+
+    document.getElementById('toggleAuto').addEventListener('click', toggleAuto);
+    document.getElementById('mobileAuto').addEventListener('click', toggleAuto);
+
+    window.addEventListener('keydown', (e) => {
+      const k = e.key.toLowerCase();
+      if (k === 'e') openBlocks();
+      if (k === 'w' || k === 'arrowup') state.moving.up = true;
+      if (k === 's' || k === 'arrowdown') state.moving.down = true;
+      if (k === 'a' || k === 'arrowleft') state.moving.left = true;
+      if (k === 'd' || k === 'arrowright') state.moving.right = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+      const k = e.key.toLowerCase();
+      if (k === 'w' || k === 'arrowup') state.moving.up = false;
+      if (k === 's' || k === 'arrowdown') state.moving.down = false;
+      if (k === 'a' || k === 'arrowleft') state.moving.left = false;
+      if (k === 'd' || k === 'arrowright') state.moving.right = false;
+    });
+
+    document.querySelectorAll('[data-move]').forEach((btn) => {
+      const dir = btn.dataset.move;
+      const start = () => { state.moving[dir] = true; };
+      const end = () => { state.moving[dir] = false; };
+      btn.addEventListener('pointerdown', start);
+      btn.addEventListener('pointerup', end);
+      btn.addEventListener('pointercancel', end);
+      btn.addEventListener('pointerleave', end);
+    });
+
+    window.addEventListener('resize', detectControlType);
+    detectControlType();
+    drawWorld();
+    drawPlayer();
+    tick();
+  </script>
+</body>
+</html>
